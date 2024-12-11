@@ -1,0 +1,121 @@
+/* Global Body Styling */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+/* Navigation Links */
+.nav-link {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #0056b3; /* Add hover color for better visibility */
+    text-decoration: none;
+}
+
+/* Table Styling */
+.table thead th {
+    text-align: center;
+    background-color: #343a40;
+    color: white;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px;
+}
+
+.table tbody td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 10px;
+    font-size: 14px;
+    color: #212529;
+}
+
+/* Input Fields Styling */
+#filterJenis,
+#searchInput {
+    border: 1px solid #ddd;
+    background-color: #ffffff;
+    font-size: 14px;
+    border-radius: 5px;
+    padding: 5px 10px;
+    transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease;
+}
+
+#filterJenis:hover, 
+#searchInput:focus {
+    box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+    border-color: #80bdff;
+    outline: none;
+}
+
+/* Button Styling */
+.btn {
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease-in-out, transform 0.2s;
+    cursor: pointer;
+}
+
+.btn:hover {
+    transform: scale(1.05); /* Adds a slight zoom effect on hover */
+}
+
+/* Success Button */
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* Danger Button */
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Warning Button */
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.table thead th, .table tbody td {
+    word-break: break-word; /* Ensure long text doesn't overflow */
+}
+
+.nav-link:focus, .btn:focus {
+    outline: 3px solid rgba(0, 123, 255, 0.5); /* Adds focus outline for keyboard navigation */
+}

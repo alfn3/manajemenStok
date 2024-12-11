@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Barang</title>
+    <style>
+        table input[type="number"] {
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: black;
+            text-align: center; /* Center align the content */
+        }
+        table td {
+            text-align: left;
+        }
+        th:nth-child(4), td:nth-child(4),
+        th:nth-child(5), td:nth-child(5),
+        th:nth-child(6), td:nth-child(6),
+        th:nth-child(7), td:nth-child(7) {
+            width: 10%; /* Set width for columns 4 to 7 */
+        }
+    </style>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'stok/styles.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <nav class="bg-dark text-white p-3" style="min-width: 250px; height: 100vh;">
+            <h4 class="text-center mb-4">Admin Dashboard</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/stok" class="nav-link text-white"><i class="fa-solid fa-box"></i> Produk</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/stok/stokpage" class="nav-link text-white"><i class="fa-solid fa-cloud-arrow-up"></i> Stok</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-grow-1 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Stok Gudang</h1>
+                <div class="d-flex gap-2">
+                    <!-- Dropdown Filter Jenis -->
+                    <select id="filterJenis" class="form-select" style="width: 200px;">
+                        <option value="">Semua Jenis</option>
+                        {% for jenis in jenis_list %}
+                        <option value="{{ jenis }}">{{ jenis }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Input Pencarian -->
+                    <input type="text" id="searchInput" class="form-control" placeholder="Cari nama produk..." style="width: 300px;">
+
+                    <!-- Tombol Reset -->
+                    <button id="btnResetFilter" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Jenis</th>
+                            <th>Nama</th>
+                            <th>Stok Awal</th>
+                            <th>TopUp</th>
+                            <th>Toko1</th>
+                            <th>Toko2</th>
+                            <th>Stok Akhir</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gudang in gudangs %}
+                        <tr>
+                            <td>{{ gudang.order }}</td>
+                            <td class="jenis-column">{{ gudang.jenis }}</td>
+                            <td class="nama-column">{{ gudang.nama }}</td>
+                            <td><input type="number" class="form-control edit-stok" data-id="{{ gudang.id }}" data-field="stok_awal" value="{{ gudang.stok_awal }}"></td>
+                            <td><input type="number" class="form-control edit-stok" data-id="{{ gudang.id }}" data-field="topup" value="{{ gudang.topup }}"></td>
+                            <td><input type="number" class="form-control edit-stok" data-id="{{ gudang.id }}" data-field="topup_toko1" value="{{ gudang.topup_toko1 }}"></td>
+                            <td><input type="number" class="form-control edit-stok" data-id="{{ gudang.id }}" data-field="topup_toko2" value="{{ gudang.topup_toko2 }}"></td>
+                            <td class="stok-akhir">{{ gudang.stok_akhir }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.getElementById("searchInput");
+            const filterJenis = document.getElementById("filterJenis");
+            const tableRows = document.querySelectorAll("tbody tr");
+
+            // Fungsi Filter
+            function filterTable() {
+                const searchText = searchInput.value.toLowerCase();
+                const selectedJenis = filterJenis.value.toLowerCase();
+
+                tableRows.forEach(row => {
+                    const jenis = row.querySelector("td:nth-child(2)").innerText.toLowerCase();
+                    const nama = row.querySelector("td:nth-child(3)").innerText.toLowerCase();
+
+                    const matchesJenis = !selectedJenis || jenis === selectedJenis;
+                    const matchesSearch = !searchText || nama.includes(searchText);
+
+                    row.style.display = matchesJenis && matchesSearch ? "" : "none";
+                });
+            }
+
+            // Event Listeners
+            searchInput.addEventListener("input", filterTable);
+            filterJenis.addEventListener("change", filterTable);
+            document.getElementById("btnResetFilter").addEventListener("click", function () {
+                searchInput.value = "";
+                filterJenis.value = "";
+                filterTable();
+            });
+            });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Attach event listener to input fields
+            document.querySelectorAll('.edit-stok').forEach(function (input) {
+                input.addEventListener('input', function () {
+                    const id = this.getAttribute('data-id');
+                    const field = this.getAttribute('data-field');
+                    const value = parseFloat(this.value) || 0; // Ensure value is a number, default to 0
+
+                    // Get the values of the other fields for calculation
+                    const row = this.closest('tr');
+                    const stok_awal = parseFloat(row.querySelector('[data-field="stok_awal"]').value) || 0;
+                    const topup = parseFloat(row.querySelector('[data-field="topup"]').value) || 0;
+                    const topup_toko1 = parseFloat(row.querySelector('[data-field="topup_toko1"]').value) || 0;
+                    const topup_toko2 = parseFloat(row.querySelector('[data-field="topup_toko2"]').value) || 0;
+
+                    // Recalculate stok_akhir based on the updated values
+                    const stok_akhir = (stok_awal + topup - topup_toko1 - topup_toko2).toFixed(0);
+
+                    // Update the stok_akhir display on the page immediately
+                    row.querySelector('.stok-akhir').innerText = stok_akhir;
+
+                    // Send AJAX request to update the value in the database
+                    updateStok(id, field, value, stok_akhir);
+                });
+            });
+
+            function updateStok(id, field, value, stok_akhir) {
+                fetch(`/stok/barang/${id}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // No CSRF token sent here
+                    },
+                    body: JSON.stringify({
+                        field: field,
+                        value: value,
+                        stok_akhir: stok_akhir
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Update successful');
+                    } else {
+                        console.log('Error updating value');
+                    }
+                })
+                .catch(error => {
+                    console.log('Error:', error);
+                });
+            }
+        });
+        
+    </script>
+</body>
+</html>

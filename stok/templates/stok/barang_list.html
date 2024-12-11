@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Barang</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'stok/styles.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <nav class="bg-dark text-white p-3" style="min-width: 250px; height: 100vh;">
+            <h4 class="text-center mb-4">Admin Dashboard</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/stok" class="nav-link text-white"><i class="fa-solid fa-box"></i> Produk</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/stok/stokpage" class="nav-link text-white"><i class="fa-solid fa-cloud-arrow-up"></i> Stok</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-grow-1 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Daftar Produk</h1>
+                <div class="d-flex gap-2">
+                    <!-- Dropdown Filter Jenis -->
+                    <select id="filterJenis" class="form-select" style="width: 200px;">
+                        <option value="">Semua Jenis</option>
+                        {% for jenis in jenis_list %}
+                        <option value="{{ jenis }}">{{ jenis }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Input Pencarian -->
+                    <input type="text" id="searchInput" class="form-control" placeholder="Cari nama produk..." style="width: 300px;">
+
+                    <!-- Tombol Reset -->
+                    <button id="btnResetFilter" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+
+                    <!-- Tombol Tambah Barang -->
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalBarang" id="btnTambahBarang">
+                        <i class="fa-solid fa-plus"></i> Tambah Produk Baru
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Jenis</th>
+                            <th>Nama</th>
+                            <th>HPP</th>
+                            <th>Harga Jual</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for barang in barangs %}
+                        <tr id="row-{{ barang.id }}" draggable="true">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ barang.jenis }}</td>
+                            <td>{{ barang.nama }}</td>
+                            <td>Rp {{ barang.hpp|floatformat:0 }}</td>
+                            <td>Rp {{ barang.hj|floatformat:0 }}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm btnEditBarang" 
+                                    data-id="{{ barang.id }}"
+                                    data-jenis="{{ barang.jenis }}"
+                                    data-nama="{{ barang.nama }}"
+                                    data-hpp="{{ barang.hpp }}" 
+                                    data-hj="{{ barang.hj }}" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalBarang">
+                                    <i class="fa-solid fa-edit"></i> Edit
+                                </button>
+                                <!-- Button Trigger Modal -->
+                                <button class="btn btn-danger btn-sm btnHapusBarang" 
+                                    data-id="{{ barang.id }}" 
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalHapus">
+                                    <i class="fa-solid fa-trash"></i> Hapus
+                                </button>
+                                
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Tambah/Edit Barang -->
+    <div class="modal fade" id="modalBarang" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="modalTitle" class="modal-title">Tambah Produk Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formBarang" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" id="formMethod" name="_method" value="POST">
+                        <div class="mb-3">
+                            <label for="jenis" class="form-label">Jenis Produk</label>
+                        <select id="jenis" name="jenis" class="form-select" required>
+                            {% for jenis in jenis_list %}
+                                <option value="{{ jenis }}" {% if form.jenis.value == jenis %}selected{% endif %}>{{ jenis }}</option>
+                            {% endfor %}
+                            <option id="jenisNewOption" value="new">Tambah Jenis Produk Baru</option>  <!-- Pilihan jenis baru -->
+                        </select>
+
+                        <!-- Input jenis baru jika "Tambah Jenis Baru" dipilih -->
+                        <div id="jenisBaruField" style="display: none;">
+                            <input type="text" id="jenisBaru" name="jenisBaru" class="form-control" placeholder="Masukkan jenis baru" />
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label for="nama" class="form-label">Nama Produk</label>
+                            <input type="text" id="nama" name="nama" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="hpp" class="form-label">HPP</label>
+                            <input type="number" id="hpp" name="hpp" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="hj" class="form-label">Harga Jual</label>
+                            <input type="number" id="hj" name="hj" class="form-control" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Modal Hapus Barang -->
+    <div class="modal fade" id="modalHapus" tabindex="-1" aria-labelledby="modalHapusLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalHapusLabel">Hapus Produk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus produk ini?</p>
+                    <form id="formHapusBarang" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.getElementById("searchInput");
+            const filterJenis = document.getElementById("filterJenis");
+            const tableRows = document.querySelectorAll("tbody tr");
+
+            // Fungsi Filter
+            function filterTable() {
+                const searchText = searchInput.value.toLowerCase();
+                const selectedJenis = filterJenis.value.toLowerCase();
+
+                tableRows.forEach(row => {
+                    const jenis = row.querySelector("td:nth-child(2)").innerText.toLowerCase();
+                    const nama = row.querySelector("td:nth-child(3)").innerText.toLowerCase();
+
+                    const matchesJenis = !selectedJenis || jenis === selectedJenis;
+                    const matchesSearch = !searchText || nama.includes(searchText);
+
+                    row.style.display = matchesJenis && matchesSearch ? "" : "none";
+                });
+            }
+
+            // Event Listeners
+            searchInput.addEventListener("input", filterTable);
+            filterJenis.addEventListener("change", filterTable);
+            document.getElementById("btnResetFilter").addEventListener("click", function () {
+                searchInput.value = "";
+                filterJenis.value = "";
+                filterTable();
+            });
+
+            // Setup Modal Tambah Barang
+            document.getElementById('btnTambahBarang').addEventListener('click', function () {
+                document.getElementById('modalTitle').innerText = 'Tambah Produk Baru';
+                document.getElementById('formBarang').action = "{% url 'barang_create' %}";
+                document.getElementById('formMethod').value = 'POST';                    document.getElementById('jenis').value = '';
+                document.getElementById('nama').value = '';
+                document.getElementById('hpp').value = '';                               document.getElementById('hj').value = '';
+            });
+
+            // Setup Modal Hapus Barang
+            document.querySelectorAll('.btnHapusBarang').forEach(button => {
+                button.addEventListener('click', function () {
+                    document.getElementById('formHapusBarang').action = `/stok/barang/${this.dataset.id}/delete/`;
+                });
+            });
+
+
+
+            // Setup Modal Edit Barang
+            document.querySelectorAll('.btnEditBarang').forEach(button => {
+                button.addEventListener('click', function () {
+                    document.getElementById('modalTitle').innerText = 'Edit Produk';
+                    document.getElementById('formBarang').action = `/stok/barang/${this.dataset.id}/edit/`;
+                    document.getElementById('formMethod').value = 'PUT';
+                    const jenisDropdown = document.getElementById('jenis');
+                    jenisDropdown.value = this.dataset.jenis;  // Set jenis yang ada
+                    document.getElementById('nama').value = this.dataset.nama;
+                    document.getElementById('hpp').value = this.dataset.hpp;
+                    document.getElementById('hj').value = this.dataset.hj;
+                });
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const tableBody = document.querySelector("tbody");
+            let draggedRow = null;
+
+            // Event dragstart: ketika pengguna mulai drag
+            tableBody.addEventListener("dragstart", function (e) {
+                if (e.target.tagName === "TR") {
+                    draggedRow = e.target; // Simpan elemen yang sedang di-drag
+                    e.dataTransfer.effectAllowed = "move";
+                    e.target.style.opacity = "0.5"; // Tambahkan efek visual
+                }
+            });
+
+            // Event dragend: ketika drag selesai
+            tableBody.addEventListener("dragend", function (e) {
+                if (e.target.tagName === "TR") {
+                    e.target.style.opacity = ""; // Kembalikan opacity
+                    draggedRow = null; // Reset draggedRow setelah selesai drag
+                    updateRowNumbers(); // Perbarui nomor urut setelah drag selesai
+                }
+            });
+
+            // Event dragover: ketika elemen di-drag melewati elemen lain
+            tableBody.addEventListener("dragover", function (e) {
+                e.preventDefault(); // Izinkan drop
+                const afterElement = getDragAfterElement(tableBody, e.clientY);
+                if (afterElement == null) {
+                    tableBody.appendChild(draggedRow);
+                } else {
+                    tableBody.insertBefore(draggedRow, afterElement);
+                }
+            });
+
+            // Event drop: ketika elemen di-drop
+            tableBody.addEventListener("drop", function (e) {
+                e.preventDefault();
+
+                // Ambil urutan baru dari tabel dan kirim ke server via AJAX
+                const rows = [...tableBody.querySelectorAll("tr")];
+                const order = rows.map((row, index) => ({ 
+                    id: row.id.replace("row-", ""), 
+                    order: index + 1 
+                }));
+
+                // Kirim urutan baru ke server menggunakan AJAX
+                sendNewOrderToServer(order);
+            });
+
+            // Fungsi untuk menentukan elemen setelah posisi drop
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll("tr:not([draggable='false'])")];
+
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            // Fungsi untuk memperbarui nomor urut (#) di kolom setelah urutan tabel berubah
+            function updateRowNumbers() {
+                const rows = tableBody.querySelectorAll("tr");
+                rows.forEach((row, index) => {
+                    const numberCell = row.querySelector("td:nth-child(1)"); // Kolom #
+                    numberCell.innerText = index + 1; // Update nomor urut
+                });
+            }
+
+            // Fungsi untuk mengirim urutan baru ke server menggunakan AJAX
+            function sendNewOrderToServer(order) {
+                fetch('/stok/update-order/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ order: order })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Urutan baru berhasil disimpan:', data);
+                    // Tindakan setelah berhasil (misalnya, tampilkan pesan atau refresh tabel)
+                })
+                .catch(error => {
+                    console.error('Terjadi kesalahan saat menyimpan urutan:', error);
+                });
+            }
+        });
+
+        const jenisSelect = document.getElementById('jenis');
+        const jenisBaruField = document.getElementById('jenisBaruField');
+
+        // Tampilkan input jenis baru jika "Tambah Jenis Baru" dipilih
+        jenisSelect.addEventListener('change', function() {
+            if (this.value === 'new') {
+                jenisBaruField.style.display = 'block';
+            } else {
+                jenisBaruField.style.display = 'none';
+            }
+        });
+
+        document.getElementById('jenisBaru').addEventListener('input', function () {
+            const jenisDropdown = document.getElementById('jenis');
+            const jenisNewOption = document.getElementById('jenisNewOption');
+            const jenisBaruValue = this.value.trim(); // Ambil nilai dari input jenisBaru
+
+            if (jenisBaruValue !== "") {
+                // Jika input jenisBaru tidak kosong, ubah value pada option "Tambah Jenis Baru"
+                jenisNewOption.value = jenisBaruValue;  
+                jenisDropdown.value = jenisBaruValue;  // Pilih option yang baru dimasukkan
+                console.log('Option "Tambah Jenis Baru" diperbarui dengan:', jenisBaruValue); // Log untuk debugging
+            } else {
+                // Jika input kosong, kembalikan option value ke "new"
+                jenisNewOption.value = "new";
+                jenisDropdown.value = "new"; // Kembalikan dropdown ke opsi "new"
+                console.log('Option "Tambah Jenis Baru" kembali ke "new"'); // Log untuk debugging
+            }
+        });
+
+    </script>
+</body>
+</html>
